@@ -72,15 +72,19 @@ def getSpecificTasks(status, userId):
             tk
             for tk in task_dict.values()
             if tk.listener.userId == userId
-            and (st := tk.status() == status)
-            or status == MirrorStatus.STATUS_DOWNLOADING
-            and st not in STATUSES.values()
+            and (
+                (st := tk.status())
+                and st == status
+                or status == MirrorStatus.STATUS_DOWNLOADING
+                and st not in STATUSES.values()
+            )
         ]
     else:
         return [
             tk
             for tk in task_dict.values()
-            if (st := tk.status() == status)
+            if (st := tk.status())
+            and st == status
             or status == MirrorStatus.STATUS_DOWNLOADING
             and st not in STATUSES.values()
         ]
@@ -113,6 +117,11 @@ def get_readable_time(seconds: int):
             period_value, seconds = divmod(seconds, period_seconds)
             result += f"{int(period_value)}{period_name}"
     return result
+
+
+def time_to_seconds(time_duration):
+    hours, minutes, seconds = map(int, time_duration.split(":"))
+    return hours * 3600 + minutes * 60 + seconds
 
 
 def speed_string_to_bytes(size_text: str):
@@ -203,7 +212,7 @@ async def get_readable_message(sid, is_user, page_no=1, status="All", page_step=
             msg = f"No Active {status} Tasks!\n\n"
     buttons = ButtonMaker()
     if not is_user:
-        buttons.ibutton("📜", "status 0 ov", position="header")
+        buttons.ibutton("📜", f"status {sid} ov", position="header")
     if len(tasks) > STATUS_LIMIT:
         msg += f"<b>Page:</b> {page_no}/{pages} | <b>Tasks:</b> {tasks_no} | <b>Step:</b> {page_step}\n"
         buttons.ibutton("<<", f"status {sid} pre", position="header")
